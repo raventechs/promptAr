@@ -33,20 +33,64 @@ Tu tarea es devolver SOLO un objeto JSON (sin texto adicional, sin markdown, sin
       })
     });
 
-    const data = await response.json();
+    // Leemos el body como texto CRUDO primero, antes de intentar parsear JSON.
+    // Esto evita que un body vacío/cortado tire "Unexpected end of JSON input"
+    // sin darnos ninguna pista de qué pasó.
+    const rawText = await response.text();
 
-    // NUEVO: si Anthropic devolvió un error, lo mostramos en vez de ocultarlo
-    if (!response.ok || !data.content) {
+    if (!rawText || rawText.trim() === '') {
+      return {
+        statusCode: 502,
+        body: JSON.stringify({
+          error: 'Anthropic devolvió una respuesta vacía',
+          status_anthropic: response.status
+        })
+      };
+    }
+
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch (parseErr) {
+      return {
+        statusCode: 502,
+        body: JSON.stringify({
+          error: 'La respuesta de Anthropic no es JSON válido',
+          status_anthropic: response.status,
+          raw: rawText.slice(0, 500)
+        })
+      };
+    }
+
+    if (!response.ok || !data.content || !data.content[0]) {
       return {
         statusCode: 500,
         body: JSON.stringify({ error: 'Error de Anthropic API', detalle: data })
       };
     }
 
-    let text = data.content[0]?.text || '{}';
+    let text = data.content[0].text || '';
     text = text.replace(/```json|```/g, '').trim();
 
-    const parsed = JSON.parse(text);
+    if (!text) {
+      return {
+        statusCode: 502,
+        body: JSON.stringify({ error: 'El modelo devolvió texto vacío', detalle: data })
+      };
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch (parseErr2) {
+      return {
+        statusCode: 502,
+        body: JSON.stringify({
+          error: 'El texto del modelo no es JSON válido',
+          raw: text.slice(0, 800)
+        })
+      };
+    }
 
     return {
       statusCode: 200,
