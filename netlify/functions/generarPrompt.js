@@ -34,7 +34,16 @@ Tu tarea es devolver SOLO un objeto JSON (sin texto adicional, sin markdown, sin
     });
 
     const data = await response.json();
-    let text = data.content?.[0]?.text || '{}';
+
+    // NUEVO: si Anthropic devolvió un error, lo mostramos en vez de ocultarlo
+    if (!response.ok || !data.content) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'Error de Anthropic API', detalle: data })
+      };
+    }
+
+    let text = data.content[0]?.text || '{}';
     text = text.replace(/```json|```/g, '').trim();
 
     const parsed = JSON.parse(text);
