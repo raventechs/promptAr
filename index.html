@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Generador de Prompts - RavenTechs</title>
+<meta name="theme-color" content="#1ABC9C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PromptAR">
+<link rel="manifest" href="manifest.json">
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 <style>
   * { box-sizing: border-box; }
@@ -131,6 +136,13 @@ function copiar() {
   const texto = document.getElementById('promptTexto').textContent;
   navigator.clipboard.writeText(texto);
   alert('Prompt copiado');
+}
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js').catch(function(e){console.log('SW:',e);});
+  });
 }
 </script>
 </body>
